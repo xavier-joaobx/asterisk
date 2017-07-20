@@ -4,7 +4,7 @@
 This script answers the call and prompts for an extension, provided your caller ID is approved.
 When it receives 4 digits it will read them back to you and hang up.
 */
-$debug_mode = false; //debug mode writes extra data to the log file below whenever an AGI command is executed
+$debug_mode = true; //debug mode writes extra data to the log file below whenever an AGI command is executed
 $log_file = '/tmp/agitest.log'; //log file to use in debug mode
 
 //get the AGI variables; we will check caller id
@@ -30,8 +30,8 @@ $count = 0;
 while (($ext == '') && ($count < 3 ))
 {
     //they haven't entered anything yet
-    log_agi("Esperando numeros");
-    $result = execute_agi('GET DATA nota 5000 2');
+    log_agi("Esperando nota");
+    $result = execute_agi('GET DATA nota 5000 2'); // get data Som timeout quantidade de dígitos
     if ($result['result'] > 0)
     {
    	 $ext = $result['result'];
@@ -41,28 +41,15 @@ while (($ext == '') && ($count < 3 ))
 
 if ($ext != '')
 {
+	$atendente=$argv[1];
+	$fila=$argv[2];
     log_agi("Conectando ao banco");
-    $link = mysql_connect("127.0.0.1",'usuariodobanco','senhausuariobanco');
+    $link = mysql_connect("127.0.0.1",'asterisk','asterisk');
     log_agi("Selecionando DATABASE");
-    mysql_select_db("asterisk");
+    mysql_select_db("BdAsterisk");
     log_agi("Registrando LOG banco");
-    $sql=sprintf("Insert into Log(Numero,HoraAcesso) Values (%d,NOW())",$agi_callerid);
+    $sql=sprintf("Insert into Nota(Data_nota,Caller_id,Atendente,Fila,Nota) Values (NOW(),%s,%s,%s,%d)",$agi_callerid,$atendente,$fila,$ext);
     mysql_query($sql);
-    log_agi("Enviando consulta ao banco");
-    $sql=sprintf("select * from Mercadorias where idMercadoria=%s",$ext);
-    log_agi($sql);
-    $result = mysql_query($sql);
-    $num_rows = mysql_num_rows($result);
-    log_agi("num_rows=$num_rows");
-    if ($num_rows>0)
-    {
-   	 $line = mysql_fetch_array($result, MYSQL_ASSOC);
-   	 log_agi("Quantidade=" . $line['Quantidade']);
-   	 execute_agi('STREAM FILE estoque ""');
-   	 $msg=sprintf("SAY DIGITS %d \"\"",$line['Quantidade']);
-   	 log_agi($msg);
-   	 execute_agi($msg);
-    }
 
 }
 
