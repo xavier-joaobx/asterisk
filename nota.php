@@ -6,7 +6,6 @@ When it receives 4 digits it will read them back to you and hang up.
 */
 $debug_mode = true; //debug mode writes extra data to the log file below whenever an AGI command is executed
 $log_file = '/tmp/agitest.log'; //log file to use in debug mode
-
 //get the AGI variables; we will check caller id
 $agivars = array();
 while (!feof(STDIN)) {
@@ -23,7 +22,6 @@ foreach($agivars as $k=>$v) {
     log_agi("Got $k=$v");
 }
 extract($agivars);
-
 //ask for an extension
 $ext = '';
 $count = 0;
@@ -38,30 +36,24 @@ while (($ext == '') && ($count < 3 ))
     }
     $count++;
 }
-
 if ($ext != '')
 {
 	$atendente=$argv[1];
 	$fila=$argv[2];
     log_agi("Conectando ao banco");
-    $link = mysql_connect("127.0.0.1",'asterisk','asterisk');
-    log_agi("Selecionando DATABASE");
-    mysql_select_db("BdAsterisk");
+    $link = mysql_connect("127.0.0.1","asterisk","asterisk") or log_agi(mysql_error($link));
+    log_agi("Selecionando DATABASE") or log_agi(mysql_error($link));
+    mysql_select_db("BdAsterisk") or log_agi(mysql_error($link));
     log_agi("Registrando LOG banco");
-    $sql=sprintf("Insert into Nota(Data_nota,Caller_id,Atendente,Fila,Nota) Values (NOW(),%s,%s,%s,%d)",$agi_callerid,$atendente,$fila,$ext);
-    mysql_query($sql);
-
+    $sql=sprintf("Insert into Nota(Data_nota,Caller_id,Atendente,Fila,Nota) Values (NOW(),'%s','%s','%s',%d)",$agi_callerid,$atendente,$fila,$ext);
+    mysql_query($sql) or log_agi(mysql_error($link));
 }
-
 log_agi("Got extension $ext");
-
 execute_agi('STREAM FILE vm-goodbye ""');
 execute_agi('HANGUP');
 exit;
-
 function execute_agi($command) {
     global $debug_mode, $log_file;
-
     fwrite(STDOUT, "$command\n");
     fflush(STDOUT);
     $result = trim(fgets(STDIN));
@@ -85,7 +77,6 @@ function execute_agi($command) {
     }
     return $ret;
 }
-
 function log_agi($entry, $level = 1) {
     if (!is_numeric($level)) {
    	 $level = 1;
@@ -93,4 +84,3 @@ function log_agi($entry, $level = 1) {
     $result = execute_agi("VERBOSE \"$entry\" $level");
 }
 ?>
-
