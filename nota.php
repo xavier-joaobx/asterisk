@@ -36,10 +36,10 @@ while (($ext == '') && ($count < 3 ))
     }
     $count++;
 }
-if ($ext != '')
+if (($ext != '') and ($ext <= 10) and ($ext >=0))
 {
-	$atendente=$argv[1];
-	$fila=$argv[2];
+	$atendente=$argv[2];
+	$fila=$argv[1];
     log_agi("Conectando ao banco");
     $link = mysql_connect("127.0.0.1","asterisk","asterisk") or log_agi(mysql_error($link));
     log_agi("Selecionando DATABASE") or log_agi(mysql_error($link));
@@ -47,6 +47,10 @@ if ($ext != '')
     log_agi("Registrando LOG banco");
     $sql=sprintf("Insert into Nota(Data_nota,Caller_id,Atendente,Fila,Nota) Values (NOW(),'%s','%s','%s',%d)",$agi_callerid,$atendente,$fila,$ext);
     mysql_query($sql) or log_agi(mysql_error($link));
+}
+else
+{
+	execute_agi('STREAM FILE invalida ""');
 }
 log_agi("Got extension $ext");
 execute_agi('STREAM FILE vm-goodbye ""');
